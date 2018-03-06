@@ -4,87 +4,105 @@ import app.model.User;
 import app.model.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.social.oauth2.OAuth2Operations;
-import org.springframework.social.oauth2.OAuth2Template;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.PostConstruct;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 public class Controller {
 
-    @Autowired
-    private UserRepository repo;
+    private Timer timer;
+
 
     @Autowired
     Environment env;
 
+    TwitterUtil twitterUtil;
+
+    @Autowired
+    private UserRepository repo;
+
     @PostConstruct
     public void init() {
+
+
+        //initialize twitter util
+        String appId = env.getProperty("spring.social.twitter.appId");
+        String appSecret = env.getProperty("spring.social.twitter.appSecret");
+        twitterUtil = TwitterUtil.initialize(appId,appSecret);
+
+        //fill database with initial users
         repo.save(new User("mkukulic"));
         repo.save(new User("ACiganj"));
         repo.save(new User("BEST_Zagreb"));
+
     }
 
-    @RequestMapping("/")
-    public Iterable<User> users() {
-       return repo.findAll();
-    }
+    class MyTimerTask extends TimerTask {
+        private String userHandle;
 
-    @RequestMapping("/twitter")
-    public Set<String> twitterFollowers() {
-        String appId = env.getProperty("spring.social.twitter.appId");
-        String appSecret = env.getProperty("spring.social.twitter.appSecret");
-        String appToken = fetchApplicationAccessToken(appId, appSecret);
-
-        return getFollowers(appToken);
-    }
-
-
-
-    private static final String url = "https://api.twitter.com/1.1/followers/list.json?cursor=-1&screen_name=ACiganj&skip_status=true&include_user_entities=false";
-
-
-
-    public static Set<String> getFollowers(String appToken) {
-        RestTemplate rest = new RestTemplate();
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("Authorization", "Bearer " + appToken);
-        HttpEntity<String> requestEntity = new HttpEntity<String>("", headers);
-        Map<String, ?> result = rest.exchange(url, HttpMethod.GET, requestEntity, Map.class).getBody();
-        List<Map<String, ?>> userItems = (List<Map<String, ?>>) result.get("users");
-        Set<String> users = new HashSet<>();
-        for (Map<String, ?> userItem : userItems) {
-            users.add(userItem.get("name").toString());
+        public MyTimerTask(String userHandle) {
+            this.userHandle = userHandle;
         }
-        return users;
+
+        @Override
+        public void run() {
+            updateDatabase(userHandle);
+        }
+
     }
 
-    public static String fetchApplicationAccessToken(String appId, String appSecret) {
-        // Twitter supports OAuth2 *only* for obtaining an application token, not for user tokens.
-        OAuth2Operations oauth = new OAuth2Template(appId, appSecret, "", "https://api.twitter.com/oauth2/token");
-        return oauth.authenticateClient().getAccessToken();
+
+    private void updateDatabase(String handle){
+
+        Iterable<User> users = repo.findAll();
+
+        Set<String> followers = twitterUtil.getFollowerHandles(handle);
+
+        for (User user : users) {
+            user.setFollowing(followers.contains(user.getName()));
+        }
+        repo.save(users);
+
     }
 
+    /**
+     * Starts to monitor followers of user with supplied handle.
+     * @param handle user handle
+     */
+    @RequestMapping("/monitor/{handle}")
+    public List<User> monitor(@PathVariable("handle") String handle) {
+        if (timer != null) {
+            timer.cancel();
+        }
+        //sets up a new timer which will start polling after one second
+        timer = new Timer();
+        timer.scheduleAtFixedRate(new MyTimerTask(handle), 1000, 1000);
 
+        //poll immediately so the followers can be returned
+        updateDatabase(handle);
 
+        return filterFollowers(repo.findAll());
+    }
 
+    @RequestMapping("/database")
+    public List<User> fetchDatabase() {
+        return filterFollowers(repo.findAll());
+    }
 
+    /**
+     * Filters users by following field TODO move this to database lvl
+     */
+    public List<User> filterFollowers(Iterable<User> users) {
 
+        List<User> userList = new ArrayList<>();
 
+        users.forEach(userList::add);
 
-
-
-
-
+        return userList.stream().filter(User::isFollowing).collect(Collectors.toList());
+    }
 }

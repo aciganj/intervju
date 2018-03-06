@@ -14,6 +14,8 @@ public class User {
 
     private String name;
 
+    private Boolean following;
+
     public User() {
     }
 
@@ -28,5 +30,13 @@ public class User {
 
     public String getName() {
         return name;
+    }
+
+    public Boolean isFollowing(){
+        return following;
+    }
+
+    public void setFollowing(Boolean following){
+        this.following = following;
     }
 }

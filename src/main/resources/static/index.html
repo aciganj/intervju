@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Interview task</title>
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/main.css" rel="stylesheet">
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/app.js"></script>
+</head>
+<body>
+<div id="main-content" class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group">
+                    <button id="database" class="btn btn-default" type="submit">Refresh</button>
+                    </button>
+                </div>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="name">Select user handle: </label>
+                    <select id="name">
+                        <option value="ACiganj">ACiganj</option>
+                        <option value="mkukulic">mkukulic</option>
+                        <option value="BEST_Zagreb">BEST_Zagreb</option>
+                    </select>
+                </div>
+                <button id="monitor" class="btn btn-default" type="submit">Send</button>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table id="conversation" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Followers</th>
+                </tr>
+                </thead>
+                <tbody id="followers">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>
