@@ -79,7 +79,7 @@ public class Controller {
         if (timer != null) {
             timer.cancel();
         }
-        //sets up a new timer which will start polling after one second
+        //sets up a timer which will start polling after one second
         timer = new Timer();
         timer.scheduleAtFixedRate(new MyTimerTask(handle), 1000, 1000);
 

@@ -14,7 +14,7 @@ public class User {
 
     private String name;
 
-    private Boolean following;
+    private Boolean following = false;
 
     public User() {
     }
