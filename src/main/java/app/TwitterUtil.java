@@ -5,12 +5,17 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.social.oauth2.OAuth2Operations;
 import org.springframework.social.oauth2.OAuth2Template;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
 
+/**
+ * Helper class used for communication with twitter
+ */
 public class TwitterUtil {
 
+    //TODO retrieve all followers, not just first 100
     private static final String url = "https://api.twitter.com/1.1/followers/list.json?cursor=-1&screen_name={username}&skip_status=true&include_user_entities=false";
 
     private String appToken;
@@ -29,19 +34,27 @@ public class TwitterUtil {
         return extractFollowerHandlesToSet(twitterApiFollowersRequest(userHandle));
     }
 
-    private Set<String> extractFollowerHandlesToSet(Map<String,?> responseMap) {
+    private Set<String> extractFollowerHandlesToSet(Map<String,?> responseBody) {
 
-        List<Map<String, ?>> userItems = (List<Map<String, ?>>) responseMap.get("users");
         Set<String> users = new HashSet<>();
 
-        for (Map<String, ?> userItem : userItems) {
-            users.add(userItem.get("screen_name").toString());
-        }
+        List<Map<String, ?>> userItems = (List<Map<String, ?>>) responseBody.get("users");
 
+        if(userItems!=null) {
+
+            for (Map<String, ?> userItem : userItems) {
+                users.add(String.valueOf(userItem.get("screen_name")));
+            }
+        }
         return users;
     }
 
-    private Map<String, ?> twitterApiFollowersRequest(String username){
+    /**
+     * Construct and execute twitter api followers request.
+     * @param username followed user handle
+     * @return map containing response body
+     */
+    private Map<String, ?> twitterApiFollowersRequest(String username) {
         RestTemplate rest = new RestTemplate();
 
         HttpHeaders headers = new HttpHeaders();
@@ -49,7 +62,17 @@ public class TwitterUtil {
 
         HttpEntity<String> requestEntity = new HttpEntity<String>("", headers);
 
-        return rest.exchange(url, HttpMethod.GET, requestEntity, Map.class, username).getBody();
+        Map<String, ?> responseBody=new HashMap<>();
+
+        try {
+            responseBody = rest.exchange(url, HttpMethod.GET, requestEntity, Map.class, username).getBody();
+        } catch (HttpClientErrorException e){
+            System.out.println("Twitter api call limit reached");
+            //todo log4j
+        }
+
+
+        return responseBody;
     }
 
     /**

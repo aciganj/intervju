@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @RestController
 public class Controller {
@@ -36,13 +35,17 @@ public class Controller {
         twitterUtil = TwitterUtil.initialize(appId,appSecret);
 
         //fill database with initial users
-        repo.save(new User("mkukulic"));
         repo.save(new User("ACiganj"));
+        repo.save(new User("mkukulic"));
         repo.save(new User("BEST_Zagreb"));
+
+        //predefined followed user
+        monitor("BEST_Zagreb");
 
     }
 
     class MyTimerTask extends TimerTask {
+
         private String userHandle;
 
         public MyTimerTask(String userHandle) {
@@ -56,7 +59,10 @@ public class Controller {
 
     }
 
-
+    /**
+     * Updates the followers in database with their actual twitter follower status
+     * @param handle handle of followed user
+     */
     private void updateDatabase(String handle){
 
         Iterable<User> users = repo.findAll();
@@ -86,23 +92,13 @@ public class Controller {
         //poll immediately so the followers can be returned
         updateDatabase(handle);
 
-        return filterFollowers(repo.findAll());
+        return repo.findByFollowing(true);
     }
 
     @RequestMapping("/database")
     public List<User> fetchDatabase() {
-        return filterFollowers(repo.findAll());
+        return repo.findByFollowing(true);
     }
 
-    /**
-     * Filters users by following field TODO move this to database lvl
-     */
-    public List<User> filterFollowers(Iterable<User> users) {
 
-        List<User> userList = new ArrayList<>();
-
-        users.forEach(userList::add);
-
-        return userList.stream().filter(User::isFollowing).collect(Collectors.toList());
-    }
 }

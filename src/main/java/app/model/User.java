@@ -20,8 +20,12 @@ public class User {
     }
 
     public User(String name) {
-        this.id = id;
         this.name = name;
+    }
+
+    public User(String name, Boolean following) {
+        this.name = name;
+        this.following = following;
     }
 
     public Long getId() {
