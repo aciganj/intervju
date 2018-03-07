@@ -15,8 +15,8 @@ import java.util.*;
  */
 public class TwitterUtil {
 
-    //TODO retrieve all followers, not just first 100
-    private static final String url = "https://api.twitter.com/1.1/followers/list.json?cursor=-1&screen_name={username}&skip_status=true&include_user_entities=false";
+    //TODO retrieve all followers, not just first 200
+    private static final String url = "https://api.twitter.com/1.1/followers/list.json?cursor=-1&screen_name={username}&skip_status=true&include_user_entities=false&count=200";
 
     private String appToken;
 
@@ -67,8 +67,11 @@ public class TwitterUtil {
         try {
             responseBody = rest.exchange(url, HttpMethod.GET, requestEntity, Map.class, username).getBody();
         } catch (HttpClientErrorException e){
-            System.out.println("Twitter api call limit reached");
+            //problem could be twitter api call limit reached or non-existing handle
+            System.out.println(e.getMessage());
+
             //todo log4j
+            //todo cancel timer
         }
 
 

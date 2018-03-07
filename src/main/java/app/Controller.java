@@ -14,6 +14,8 @@ import java.util.*;
 @RestController
 public class Controller {
 
+    private final static String PREDEFINED_FOLLOWED_USER = "BEST_Zagreb";
+
     private Timer timer;
 
 
@@ -37,10 +39,10 @@ public class Controller {
         //fill database with initial users
         repo.save(new User("ACiganj"));
         repo.save(new User("mkukulic"));
-        repo.save(new User("BEST_Zagreb"));
+        repo.save(new User(PREDEFINED_FOLLOWED_USER));
 
         //predefined followed user
-        monitor("BEST_Zagreb");
+        monitor(PREDEFINED_FOLLOWED_USER);
 
     }
 
